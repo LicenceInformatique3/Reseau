@@ -16,53 +16,76 @@ void capter_fin(int sig){
 
 
 
-/*
-int creer_tubes_ecoute(Client *c){
-	printf("Création tubes service\n");
-	sprintf(c->tub_cs_nom,"tub_cs_%d",(int)getpid());
-	int k=mkfifo(c->tub_cs_nom, 0600);
-	if (k<0){
-		perror("wkfifo cs");
-		return -1;
-	}
 
-	sprintf(c->tub_sc_nom,"tub_sc_%d",(int)getpid());
-	k=mkfifo(c->tub_sc_nom, 0600);
+int creer_tubes_ecoute(Serveur *s){
+	printf("Création tubes ecoute\n");
+	sprintf(s->tub_ec_nom,"tub_ec_%d",(int)getpid());
+	int k=mkfifo(s->tub_ec_nom, 0600);
 	if (k<0){
-		perror("wkfifo sc");
-		unlink(c->tub_cs_nom);
+		perror("mkfifo cs");
 		return -1;
 	}
 	return 0
 }
-*/
-/*
-void supprimer_tubes_ecoute(Client *c){
-	printf("Suppresion tubes service\n");
-	unlink(c->tub_cs_nom);
-	unlink(c->tub_sc_nom);
+
+
+void supprimer_tubes_ecoute(Serveur *s){
+	printf("Suppresion tubes ecoute\n");
+	unlink(s->tub_ec_nom);
 }
-*/
 
-/*
-	faire_transaction
-		attendre_contact
-		fork
-			pere 			
-			attend fin tub_ec avec: while read > 0
-			fin tub_ec
+int ouvrir_tubes_ecoute(Serveur *s){
+	//ouvertures bloquantes !!
+	printf("ouvertures tub_ec ecoute\n");
+	s->tub_ec=open(s->tub_ec_nom,O_RDONLY);
+	if (s->tub_ec<0){
+		perror("open tub_cs");
+		return -1;
+	}
+	return 0;
+}
 
-			fils
-			fermeture tub_ec
-			fils main()
-			attendre contact
-				ouverture tub_ec Blocante
-				lecture dans tub-ec des  nom tube service
-			filsmain
+void fermer_tubes_ecoute(Serveur *s){
+	printf("Fermetures tub_ec ecoute\n");
+	close(c->tub_ec);
+
+}
+
+
+void main_fils();
+			/*filsmain
 				ouvrir tube service
 				while (boucle princ)
 					faire dialogue
-				fermer tube service
+				fermer tube service*/
+
+int attendre_contact(Serveur *s){
+	int k=ouvrir_tubes_ecoute(s);
+	if (k<0){
+		return k;
+		//lecture dans tub-ec des  nom tube service + attribution
+	}
+}
+
+int faire_transaction(Serveur *s){
+	attendre_contact(s);
+	int f=fork();
+	if (f<0){
+		perror("fork")
+		return -1;
+	}
+	if (f==0){
+	fermer_tubes_ecoute(s);
+	main_fils(s);
+	}
+	while(read > 0){
+	}
+	fermer_tubes_ecoute(s);
+	return 0;
+}
+/*
+	faire_transaction
+		attendre_contact
 
 			faire_diaogue
 				lecture tub_cs
@@ -70,43 +93,12 @@ void supprimer_tubes_ecoute(Client *c){
 				écriture tub-sc
 */
 
-int ouvrir_tubes_service(Client *c){
-	//ouvertures bloquantes !!
-	printf("ouvertures tub_cs service\n");
-	c->tub_cs=open(c->tub_cs_nom,O_WRONLY);
-	if (c->tub_cs<0){
-		perror("open tub_cs");
-		return -1;
-	}
-	printf("ouvertures tub_cs service\n");
-	c->tub_sc=open(c->tub_sc_nom,O_RDONLY);
-	if (c->tub_sc<0){
-		perror("open tub_sc");
-		close(c->tub_cs);
-		return -1;
-	}
-	return 0;
-}
-
-/** Tester : ouvrir 2 terminaux
- * / cat < tub_cs_567
- * ~~ il vous répond là
- * \ cat > tub_sc_567
- * tapez ici
- */
-
-void fermer_tubes_service(Client *c){
-	printf("Fermetures tub_cs tub_sc service\n");
-	close(c->tub_cs);
-	close(c->tub_sc);
-
-}
-
+/*
 int prendre_contact(Client *c){
 	printf("Ouverture tub_ec \n");
 	if (open(c->tub_ec_nom,O_WRONLY) <0){
 		perror ("open tub_ec")
-		return-1;
+		return -1;
 	}
 	printf("Envoi nomstubes\n");
 	char buf[1000];
@@ -134,7 +126,7 @@ int faire_dialogue(Client *c){
 	printf("Réponse :%s\n",buf );
 	return 1;
 
-}
+}*/
 
 int main(int argc,char * argv[]){
 	Serveur s;
@@ -148,8 +140,8 @@ int main(int argc,char * argv[]){
 		exit(1);
 	}
 	bor_signal(SIGINT,capter_fin,0);
-	bor_signal(SIGPIPE,SIG_ING,SA_RESTART);	
-	bor_signal(SIGCHLD,SIG_ING,SA_RESTART);	
+	bor_signal(SIGPIPE,SIG_IGN,SA_RESTART);	
+	bor_signal(SIGCHLD,SIG_IGN,SA_RESTART);	
 
 	while(boucle_princ){
 

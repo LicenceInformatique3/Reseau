@@ -12,18 +12,18 @@ int creer_tubes_service(Client *c){
 	sprintf(c->tub_cs_nom,"tub_cs_%d",(int)getpid());
 	int k=mkfifo(c->tub_cs_nom, 0600);
 	if (k<0){
-		perror("wkfifo cs");
+		perror("mkfifo cs");
 		return -1;
 	}
 
 	sprintf(c->tub_sc_nom,"tub_sc_%d",(int)getpid());
 	k=mkfifo(c->tub_sc_nom, 0600);
 	if (k<0){
-		perror("wkfifo sc");
+		perror("mkfifo sc");
 		unlink(c->tub_cs_nom);
 		return -1;
 	}
-	return 0
+	return 0;
 }
 
 void supprimer_tubes_service(Client *c){
@@ -34,13 +34,13 @@ void supprimer_tubes_service(Client *c){
 
 int ouvrir_tubes_service(Client *c){
 	//ouvertures bloquantes !!
-	printf("ouvertures tub_cs service\n");
+	printf("ouvertures tub_cs ...\n");
 	c->tub_cs=open(c->tub_cs_nom,O_WRONLY);
 	if (c->tub_cs<0){
 		perror("open tub_cs");
 		return -1;
 	}
-	printf("ouvertures tub_cs service\n");
+	printf("ouvertures tub_sc ...\n");
 	c->tub_sc=open(c->tub_sc_nom,O_RDONLY);
 	if (c->tub_sc<0){
 		perror("open tub_sc");
@@ -66,9 +66,10 @@ void fermer_tubes_service(Client *c){
 
 int prendre_contact(Client *c){
 	printf("Ouverture tub_ec \n");
-	if (open(c->tub_ec_nom,O_WRONLY) <0){
-		perror ("open tub_ec")
-		return-1;
+	c->tub_ec=open(c->tub_ec_nom,O_WRONLY);
+	if ( c->tub_ec <0){
+		perror ("open tub_ec");
+		return -1;
 	}
 	printf("Envoi nomstubes\n");
 	char buf[1000];
@@ -106,7 +107,7 @@ int main(int argc,char * argv[]){
 		exit(1);
 	}
 	c.tub_ec_nom=argv[1];
-	bor_signal(SIGPIPE,SIG_ING,SA_RESTART);		//protection contre SIGPIPE
+	bor_signal(SIGPIPE,SIG_IGN,SA_RESTART);		//protection contre SIGPIPE
 	if (creer_tubes_service(&c) < 0){
 		exit(1);
 	}
@@ -118,12 +119,12 @@ int main(int argc,char * argv[]){
 	}
 	while(1){
 		r=faire_dialogue(&c);
-		if(r==0){
+		if(r<=0){
 			break;
 		}
 	}
 
-
+	fermer_tubes_service(&c);
 	fin1:
 		supprimer_tubes_service(&c);
 	exit(r<0 ? 1:0);
