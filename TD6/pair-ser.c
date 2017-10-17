@@ -35,7 +35,7 @@ int dialoguer_avec_client(int soc){
 	}
 	preparer_reponse_non_vide(buf1,buf2);
 	printf("Envoi réponse ...\n");
-	k=bor_write(soc,buf2)
+	k=bor_write(soc,buf2);
 	return k;
 }
 
@@ -91,13 +91,12 @@ int main(){
 	if (socec < 0){
 	 	exit(1);
 	}
-	if (bor_listen(socec , 1)<0)
-	{
+	if (bor_listen(socec , 1)<0){
 		goto fin1;
 	}
 
 	while(boucle_princ){
-		k=traiter_connexion_client(socec)
+		k=traiter_connexion_client(socec);
 		if(k<=0){
 			break;
 		}

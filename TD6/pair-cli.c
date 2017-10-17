@@ -28,7 +28,7 @@ int main(){
 	}
 
 	while(boucle_princ){
-		k=dialoguer_avec_serveur(soc)
+		k=dialoguer_avec_serveur(soc);
 		if(k<=0){
 			break;
 		}
