@@ -1,3 +1,24 @@
+int dialoguer_avec_serveur(int soc){
+	char buf1[2000],buf2[2000];
+	printf("construction message\n");
+	int k=bor_read_str(0,buf1,sizeof(buf2));
+	if(k<=0){
+		return k;
+	}
+	printf("envoi %d a %d \"%s\"\n",k,soc,buf2 );
+	k=bor_write(soc,buf2);
+	if(k<=0){
+		return k;
+	}
+	printf("attente réponse ...\n");
+	int k=bor_read_str(soc,buf1,sizeof(buf1));
+	if(k<=0){
+		return k;
+	}
+	printf("reçu %d de %d \"%s\"\n",k,soc,buf1 );
+	return k;
+}
+
 int boucle_princ =1;
 
 void capter_SIGINT(int sig){

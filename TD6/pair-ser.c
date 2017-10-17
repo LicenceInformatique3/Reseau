@@ -33,8 +33,9 @@ int dialoguer_avec_client(int soc){
 	if(k<=0){
 		return k;
 	}
+	printf("reçu %d de %d \"%s\"\n",k,soc,buf1 );
 	preparer_reponse_non_vide(buf1,buf2);
-	printf("Envoi réponse ...\n");
+	printf("envoi a %d \"%s\"\n",soc,buf2 );
 	k=bor_write(soc,buf2);
 	return k;
 }
