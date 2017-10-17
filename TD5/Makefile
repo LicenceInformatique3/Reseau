@@ -15,7 +15,7 @@ LIBS   =
 EXECS = 
 
 # pour compiler avec bor-util.c
-EXECSUTIL = td5
+EXECSUTIL = date-ser date-cli
 
 # pour compiler avec bor-util.c et bor-timer.c
 EXECSTIMER = 
