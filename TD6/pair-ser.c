@@ -44,7 +44,7 @@ void fils_main(int socec,int socse,struct sockaddr_un adr_client){
 	close(socec);
 
 	while(boucle_princ){
-		k=dialoguer_avec_client(socse)
+		k=dialoguer_avec_client(socse);
 		if(k<=0){
 			break;
 		}
