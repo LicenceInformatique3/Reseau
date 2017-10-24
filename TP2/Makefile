@@ -1,7 +1,7 @@
 # Makefile pour UE SIN5U3 "Reseau et Communication"
 #
 # 23/10/2013 - Edouard.Thiel@lif.univ-mrs.fr
-#Modifié par Gaëtan Perrot
+#Modifié par Gaëtan Perrot et Lucas Moragues
 
 SHELL  = /bin/bash
 CC     = gcc
@@ -12,13 +12,13 @@ LIBS   =
 # Si une ligne est pleine, rajouter '\' en fin de ligne et passer a la suivante.
 
 # pour compiler sans bor-util.c
-EXECS = 
+EXECS =
 
 # pour compiler avec bor-util.c
 EXECSUTIL = heritub redir2tub debitub
 
 # pour compiler avec bor-util.c et bor-timer.c
-EXECSTIMER = 
+EXECSTIMER =
 
 
 %.c%.o :

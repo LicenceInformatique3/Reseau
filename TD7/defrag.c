@@ -11,7 +11,7 @@ int couper_ligne(char * buf,int debut,int fin){
 }
 
 void supprimer_ligne(char * buf , int i , int * fin){
-	memmove(buf,buf+i *fin-i);
+	memmove(buf, buf+i+1, *fin-i);
 	*fin -= i+1;
 }
 
@@ -35,18 +35,19 @@ void defragmenter_ligne(char *buf ,int bufsize,int * pos,int fin){
 }
 
 int main(int argc, char * argv[]){
-	if(arfc-1 !=2){
+	if(argc-1 !=2){
 		printf("usage : %s nomserveur port_serveur\n", argv[0]);
 		exit(1);
 	}
 	char * nom_serveur=argv[1];
-	port_serveur=atoi(argv[2]);
-	struct sockaddr_in(adr_client,adr_serveur);
-	int soc=bor_create_socket_in(sock_STREAM,0,&adr_serveur);
+	int port_serveur=atoi(argv[2]);
+	int k = -1;
+	struct sockaddr_in adr_serveur;
+	int soc=bor_create_socket_in(SOCK_STREAM,0,&adr_serveur);
 	if(soc <0){
 		exit(1);
 	}
-	if(bor_resolve_addess_in(nom_serveur,port_serveur,&adr_serveur) <0){
+	if(bor_resolve_address_in(nom_serveur,port_serveur,&adr_serveur) <0){
 		goto fin1;
 	}
 	printf("connexion ...");
@@ -58,15 +59,17 @@ int main(int argc, char * argv[]){
 	char buf[1024];
 	int pos=0;
 	while (1){
-		k=bor_read_str(soc,buf+pos,sizeof(buz)-pos);
+		k=bor_read_str(soc,buf+pos,sizeof(buf)-pos);
 		if(k<=0){
 			break;
 		}
 		printf("client : a lu ..");
-		defragmenter_ligne(buf,sizeof(buf),&pos,&pos +k); //pos +=k
+		defragmenter_ligne(buf,sizeof(buf),&pos,pos +k); //pos +=k
 	}
 
 	fin1 :
 	printf("Fin client\n");
 	close(soc);
+
+	exit(k<0?1:0);
 }

@@ -1,7 +1,7 @@
 #include "bor-util.h"
 
 int dialoguer_avec_serveur(int soc){
-	char buf[1024]
+	char buf[1024];
 	int k=bor_read_str(soc,buf,sizeof(buf));
 	if(k<=0){
 		return k;
@@ -21,11 +21,11 @@ int main(int argc, char * argv[]){
 	int k = -1;
 
 	struct sockaddr_in adr_serveur;
-	int soc=bor_create_socket_in(sock_STREAM,0,&adr_serveur);
+	int soc=bor_create_socket_in(SOCK_STREAM,0,&adr_serveur);
 	if(soc <0){
 		exit(1);
 	}
-	if(bor_resolve_addess_in(nom_serveur,13,&adr_serveur) <0){
+	if(bor_resolve_address_in(nom_serveur,port,&adr_serveur) <0){
 		goto fin1;
 	}
 	printf("connexion ...");

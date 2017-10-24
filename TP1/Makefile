@@ -1,7 +1,7 @@
 # Makefile pour UE SIN5U3 "Reseau et Communication"
 #
 # 23/10/2013 - Edouard.Thiel@lif.univ-mrs.fr
-#Modifié par Gaëtan Perrot
+#Modifié par Gaëtan Perrot et Lucas Moragues
 
 SHELL  = /bin/bash
 CC     = gcc
@@ -15,7 +15,7 @@ LIBS   =
 EXECS = rebourfils
 
 # pour compiler avec bor-util.c
-EXECSUTIL = 
+EXECSUTIL =  
 
 # pour compiler avec bor-util.c et bor-timer.c
 EXECSTIMER = triosig

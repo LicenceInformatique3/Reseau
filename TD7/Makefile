@@ -15,7 +15,7 @@ LIBS   =
 EXECS = 
 
 # pour compiler avec bor-util.c
-EXECSUTIL = date-cli date-ser
+EXECSUTIL = daytime defrag
 
 # pour compiler avec bor-util.c et bor-timer.c
 EXECSTIMER = 
