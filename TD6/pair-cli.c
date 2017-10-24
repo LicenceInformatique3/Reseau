@@ -1,3 +1,6 @@
+#include <bor_util.h>
+
+
 int dialoguer_avec_serveur(int soc){
 	char buf1[2000],buf2[2000];
 	printf("construction message\n");
