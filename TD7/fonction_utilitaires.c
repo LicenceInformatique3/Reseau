@@ -41,3 +41,4 @@ int bor_resolve_address_in(const char *host,int port, struct  sockaddr_in * sa){
 	memcpy(&sa->sin_addr.s_addr,hp->h_addr,hp->h_length);
 	return 0;
 }
+

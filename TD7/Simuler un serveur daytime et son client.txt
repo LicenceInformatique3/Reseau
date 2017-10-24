@@ -1,0 +1,22 @@
+Tp: simuler un seveur daytime
+
+while true ; do
+	date | netcat -lv 13000;
+	done
+
+simuler client
+netcat localhost 13000
+
+squelette client
+
+socket
+bind 					bor_create_socket_in
+
+gethostbyname 			bor_resolve_address_in
+
+connect
+while 1
+	read
+	0	break
+	affichage lu
+close
