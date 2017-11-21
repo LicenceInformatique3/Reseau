@@ -28,7 +28,7 @@ void capter_SIGINT(int sig){
 	boucle_princ=0;
 }
 
-int main(){
+int main(int argc , char * argv[]){
 	bor_signal(SIGINT,capter_SIGINT,0);
 	bor_signal(SIGPIPE,SIG_IGN,SA_RESTART);
 	if(argc-1 != 2){

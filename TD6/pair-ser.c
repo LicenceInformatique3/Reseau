@@ -80,11 +80,14 @@ int traiter_connexion_client(int socec){
 	return 1;
 }
 
-int main(){
+int main(int argc , char * argv[]){
 	bor_signal(SIGINT,capter_SIGINT,0);
 	bor_signal(SIGCHLD,capter_SIGCHLD,SA_RESTART);
 	bor_signal(SIGPIPE,SIG_IGN,SA_RESTART);
 	if(argc-1 != 1){
+		perror("utilisation : %s nom serveur",argv[0])
+		exit(1);
+	}
 	int k=-1;
 	char * nom_serveur=argv[1];
 
