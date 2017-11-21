@@ -1,4 +1,4 @@
-int bor_timer_add(			//calcule date expiratoire
+/*int bor_timer_add(			//calcule date expiratoire
 	unsigned long delay,	//en ms 
 	void * data){
 	if(bor_timer_nb>=BOR_TIMER_MAX){
@@ -81,6 +81,9 @@ void *bor_timer_data(){
 		return NULL;
 	return bor_timer_list[0].data;
 }
+*/
+#include "bor-util.h"
+#include "bor-timer.h"
 
 int main(){
 	int boucle_princ=1;
@@ -91,7 +94,7 @@ int main(){
 	while(boucle_princ){
 		fd_set set;
 		FD_ZERO(&set);
-		int res=select(0,&set,NULL,NULL,bor_timer_delay())
+		int res=select(0,&set,NULL,NULL,bor_timer_delay());
 		if(res<0){
 			if(errno==EINTR)
 				continue;
