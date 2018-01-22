@@ -1,5 +1,5 @@
-/**
-* FILENAME : serweb1.c
+f/**
+* FILENAME : serweb2.c
 * AUTHOR : Moragues Lucas, Perrot Gaëtan
 *
 **/
@@ -198,7 +198,7 @@ void analyser_requete (Slot *o, Infos_entete *ie){
 	}
 }
 
-int preparer_fichier(Slot *o, Infos_entete *ie){
+int preparer_fichier (Slot *o, Infos_entete *ie){
 	int k = sscanf (ie->url, "/%100[^? ]?", ie->chemin);
 	if (k != 1){
 		printf ("mauvaise syntaxe\n");
@@ -214,24 +214,6 @@ int preparer_fichier(Slot *o, Infos_entete *ie){
 	return 0;
 }
 
-int preparer_fichier (Slot *o, Infos_entete *ie)//haaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-{
-	printf("%s\n%s\n", ie->url, ie->chemin);
-	
-	FILE *fd = fd = fopen(ie->chemin, "r");
-	
-	// TODO : Retenir que chemin dans une url de type : "chemin?params"
-	
-	if (fd)
-	{
-		o->fic_fd = fd;
-		fclose(fd);
-		return 0;
-	}
-	
-	fclose(fd);
-	return -1;
-}
 
 void preparer_reponse (Slot *o, Infos_entete *ie){
 	printf("Préparation de la réponse...\n");
@@ -366,6 +348,27 @@ void preparer_select (Serveur *ser, int *maxfd, fd_set *set_read, fd_set *set_wr
 				break;
 		}
 	}
+}
+
+int faire_scrutation (Serveur* ser){
+	int maxfd;
+	fd_set set_read, set_write;
+	preparer_select(ser, &maxfd, &set_read, &set_write);
+	int res = select(maxfd+1, &set_read, &set_write, NULL, 0);
+	if (res < 0){
+		perror("select");
+		return -1;
+	}
+	if (FD_ISSET(ser->soc_ec, &set_read)){
+		int k = accepter_connexion(ser);
+		if (k < 0)
+			return -1;
+	}
+	for (int i = 0 ; i < SLOTS_NB ; i++){
+		Slot* o = &ser->slots[i];
+		traiter_slot_si_eligible(o,&set_read,&set_write);
+	}
+	return 1;
 }
 
 int boucle_princ = 1;

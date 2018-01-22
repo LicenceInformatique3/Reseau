@@ -1,16 +1,18 @@
 /**
-* FILENAME : serweb1.c
+* FILENAME : serweb3.c
 * AUTHOR : Moragues Lucas, Perrot Gaëtan
 *
 **/
 
 #define _GNU_SOURCE
 #include "bor-util.h"
+#include "bor-timer.h"
 
 #define REQSIZE 2048
 #define REPSIZE 2048
+#define FICSIZE 2048
 
-typedef enum { E_LIBRE, E_LIRE_REQUETE, E_ECRIRE_REPONSE } Etat;
+typedef enum { E_LIBRE, E_LIRE_REQUETE, E_ECRIRE_REPONSE, E_LIRE_FICHIER, E_ENVOYER_FICHIER } Etat;
 
 typedef struct {
 	Etat etat;
@@ -21,16 +23,21 @@ typedef struct {
 	char rep [REPSIZE];
 	int rep_pos;
 	int fic_fd;
+	int handle;
+	char fic_bin[FICSIZE];
+	int fic_pos;
+	int fic_len;
 } Slot;
 
 #define SLOTS_NB 32
-typedef struct {
+typedef struct
+{
 	Slot slots[SLOTS_NB];
-	int soc_ec;
-	struct sockaddr_in adr;
+	int soc_ec;			 //Socket d'écoute
+	struct sockaddr_in adr; //Adresse du serveur
 } Serveur;
 
-typedef enum {M_NONE,M_GET,M_TRACE} Id_methode;
+typedef enum { M_NONE,M_GET,M_TRACE} Id_methode;
 
 typedef enum {
 	C_OK = 200,
@@ -46,6 +53,8 @@ typedef struct {
 			chemin [REQSIZE];
 	Id_methode id_meth;
 	Code_reponse code_rep;
+	char type_mime[100];
+	off_t file_size;
 } Infos_entete;
 
 void init_slot (Slot *o){
@@ -59,6 +68,11 @@ void init_slot (Slot *o){
 	o->rep [0] = '\0';
 	o->rep_pos = 0;
 	o->fic_fd = -1;
+	o->handle = -1;
+	
+	o->fic_bin[0] = '\0';
+	o->fic_pos = 0;
+	o->fic_len = 0;
 }
 
 int slot_est_libre (Slot *o){
@@ -70,7 +84,8 @@ void liberer_slot (Slot *o){
 	close (o->soc);
 	if (o->fic_fd != -1)
 		close (o->fic_fd);
-	
+	if (o->handle != -1)
+		bor_timer_remove(o->handle);
 	init_slot (o);
 }
 
@@ -92,8 +107,7 @@ int demarrer_serveur (Serveur *ser, int port){
 	init_serveur (ser);
 	ser->soc_ec = bor_create_socket_in (SOCK_STREAM, port, &ser->adr);
 	if (ser->soc_ec < 0) return -1;
-	if (bor_listen (ser->soc_ec, 8) < 0)
-	{
+	if (bor_listen (ser->soc_ec, 8) < 0){
 		close (ser->soc_ec);
 		return -1;
 	}
@@ -160,15 +174,84 @@ char *get_http_error_message (Code_reponse code){
 		case C_OK : return "ok";
 		case C_BAD_REQUEST : return "Bad request";
 		case C_NOT_FOUND : return "Not found";
-		case C_METHOD_UNKNOWN : return "Method unknown"; 
+		case C_METHOD_UNKNOWN : return "Method unknown";
 	}
 	return "Other error";
+}
+
+char* get_extension(char* chemin){
+	char* extension = strrchr(chemin,'.');
+	if (!extension || extension == chemin) return "";
+	return extension+1;
+}
+
+void chercher_type_mime(Infos_entete* ie){
+	char* extension = get_extension(ie->url);
+	if (strcmp(extension,"html") == 0)
+		strcpy(ie->type_mime, "text/html");
+	else if (strcmp(extension,"css") == 0)
+		strcpy(ie->type_mime, "text/css");
+	else if (strcmp(extension,"png") == 0)
+		strcpy(ie->type_mime, "image/png");
+	else if (strcmp(extension,"jpeg") == 0)
+		strcpy(ie->type_mime, "image/jpg");
+	else
+		strcpy(ie->type_mime, "application/octet-stream");
+	printf("\n\ntype mime : %s\n", ie->type_mime);
+}
+
+int proceder_lecture_fichier(Slot* o){
+	printf("Préparation de la lecture du fichier...\n");
+	o->fic_pos = 0;
+
+	o->fic_len = bor_read_str(o->fic_fd, o->fic_bin, FICSIZE);
+	printf("Taille de chaine lue : %d\n", o->fic_len);
+	if (o->fic_len > 0){
+		o->etat = E_ENVOYER_FICHIER;
+		return 1;
+	}
+	printf("Fichier lu !\n");
+	return -1;
+}
+
+int proceder_envoi_fichier(Slot* o){
+	printf("\n\nPréparation de l'envoi du fichier %d ...\n",o->fic_fd);
+	int k = bor_write(o->soc, o->fic_bin+o->fic_pos, o->fic_len-o->fic_pos);
+	if (k > 0) 
+		o->fic_pos += k;
+	printf("%d/%d\n", o->fic_pos,o->fic_len);
+	if (o->fic_pos < o->fic_len)
+		return 1;
+	o->etat = E_LIRE_FICHIER;
+	return 1;
+}
+
+int preparer_fichier (Slot *o, Infos_entete *ie){
+	sscanf(ie->url, "%[^?]", ie->chemin);
+	printf("Chemin trouvé : %s\n", ie->chemin);
+	if (ie->chemin[strlen(ie->chemin)-1] == '/'){
+		snprintf(ie->url, strlen(ie->url)+1+10, "%s%s", ie->url, "index.html");
+		snprintf(ie->chemin, strlen(ie->chemin)+1+10, "%s%s", ie->chemin, "index.html");		
+	}
+	printf("Chemin trouvé : %s\n", ie->chemin);
+	o->fic_fd = open(ie->chemin, O_RDONLY);
+		
+	if (o->fic_fd < 0){
+		perror("open");
+		return -1;
+	}
+	return 0;
 }
 
 Id_methode get_id_method (char *methode){
 	if(!strcasecmp(methode, "GET")) return M_GET;
 	if(!strcasecmp(methode, "TRACE")) return M_TRACE;
 	return M_NONE;
+}
+
+int isGoodFormat(char* version){
+	return (strcasecmp(version,"HTTP/1.0") || 
+			strcasecmp(version,"HTTP/1.1"));
 }
 
 void analyser_requete (Slot *o, Infos_entete *ie){
@@ -196,41 +279,6 @@ void analyser_requete (Slot *o, Infos_entete *ie){
 			ie->file_size = stats.st_size;
 		}
 	}
-}
-
-int preparer_fichier(Slot *o, Infos_entete *ie){
-	int k = sscanf (ie->url, "/%100[^? ]?", ie->chemin);
-	if (k != 1){
-		printf ("mauvaise syntaxe\n");
-		return -1;
-	}
-	printf("url = %s , chemin = %s\n", ie->url, ie->chemin);
-	FILE *file = fopen(ie->chemin, "r");
-	if(file == NULL){
-		printf("Le fichier n'a pas pu etre ouvert.\n");
-		return -1;
-	}
-	o->fic_fd = fileno(file);
-	return 0;
-}
-
-int preparer_fichier (Slot *o, Infos_entete *ie)//haaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-{
-	printf("%s\n%s\n", ie->url, ie->chemin);
-	
-	FILE *fd = fd = fopen(ie->chemin, "r");
-	
-	// TODO : Retenir que chemin dans une url de type : "chemin?params"
-	
-	if (fd)
-	{
-		o->fic_fd = fd;
-		fclose(fd);
-		return 0;
-	}
-	
-	fclose(fd);
-	return -1;
 }
 
 void preparer_reponse (Slot *o, Infos_entete *ie){
@@ -323,10 +371,22 @@ void traiter_slot_si_eligible (Slot *o, fd_set *set_read, fd_set *set_write){
 			if (FD_ISSET (o->soc, set_read))
 				k = proceder_lecture_requete (o);
 			break;
+
 		case E_ECRIRE_REPONSE:
 			if (FD_ISSET (o->soc, set_write))
 				k = proceder_ecriture_reponse (o);
 			break;
+
+		case E_LIRE_FICHIER:
+			if(FD_ISSET(o->fic_fd, set_read))
+				k = proceder_lecture_fichier(o);
+			break;
+
+		case E_ENVOYER_FICHIER:
+			if(FD_ISSET(o->soc,set_write))
+				k = proceder_envoi_fichier(o);
+			break;
+
 		default:
 			break;
 	}
@@ -334,7 +394,6 @@ void traiter_slot_si_eligible (Slot *o, fd_set *set_read, fd_set *set_write){
 		printf ("Serveur[%d] : libération slot\n", o->soc);
 		liberer_slot (o);
 	}
-	
 	printf("traiter_slot_si_eligible\n");
 }
 
@@ -362,10 +421,42 @@ void preparer_select (Serveur *ser, int *maxfd, fd_set *set_read, fd_set *set_wr
 			case E_ECRIRE_REPONSE:
 				inserer_fd(o->soc, set_write, maxfd);
 				break;
+			case E_LIRE_FICHIER:
+				inserer_fd(o->fic_fd, set_read, maxfd);
+				break;
+			case E_ENVOYER_FICHIER:
+				inserer_fd(o->soc, set_write, maxfd);
+				break;
 			default:
 				break;
 		}
 	}
+}
+
+int faire_scrutation (Serveur* ser){
+	int maxfd;
+	fd_set set_read, set_write;
+	preparer_select(ser, &maxfd, &set_read, &set_write);
+	int res = select(maxfd+1, &set_read, &set_write, NULL, 0);
+	if (res < 0){
+		perror("select");
+		return -1;
+	}
+	if (res == 0){
+		Slot *o = bor_timer_data ();
+		liberer_slot (o);
+	}
+	
+	if (FD_ISSET(ser->soc_ec, &set_read)){
+		int k = accepter_connexion(ser);
+		if (k < 0)
+			return -1;
+	}
+	for (int i = 0 ; i < SLOTS_NB ; i++){
+		Slot* o = &ser->slots[i];
+		traiter_slot_si_eligible(o,&set_read,&set_write);
+	}
+	return 1;
 }
 
 int boucle_princ = 1;

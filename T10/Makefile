@@ -18,7 +18,7 @@ EXECS =
 EXECSUTIL =  
 
 # pour compiler avec bor-util.c et bor-timer.c
-EXECSTIMER = multime
+EXECSTIMER = multime serweb3
 
 
 %.c%.o :

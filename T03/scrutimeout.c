@@ -1,8 +1,10 @@
+/**
+* FILENAME : scrutimeout.c
+* AUTHOR : Moragues Lucas, Perrot Gaëtan
+*
+**/
 #define _GNU_SOURCE
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <ctype.h>
 #include "bor-util.h"
 

@@ -1,8 +1,10 @@
+/**
+* FILENAME : debitub.c
+* AUTHOR : Moragues Lucas, Perrot Gaëtan
+*
+**/
 #define _GNU_SOURCE
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <ctype.h>
 #include "bor-util.h"
 
@@ -63,9 +65,7 @@ int main(int argc , char  * argv[]){
 		size_t lu;
 		while(1){
 			lu=bor_read_str(p[0],s,bufsize);
-			if (lu==0){
-				fin_pipe();
-			}
+			if (lu==0) fin_pipe();
 			octetlu+=lu;
 		}
 

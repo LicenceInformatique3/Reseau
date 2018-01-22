@@ -1,3 +1,8 @@
+/**
+* FILENAME : rebourfils.c
+* AUTHOR : Moragues Lucas, Perrot Gaëtan
+*
+**/
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,23 +11,23 @@
 #include <sys/wait.h>
 
 void create_child(){
-    int p = fork();
-    if (p < 0) {
+	int p = fork();
+	if (p < 0) {
 		perror ("fork");
 		exit (1);
 	}
-    if (p == 0){
-        for (int i = 10; i > 0; i--){
-            printf("%d\n", i);
-            sleep (1);
-        }
-        exit (0);
+	if (p == 0){
+		for (int i = 10; i > 0; i--){
+			printf("%d\n", i);
+			sleep (1);
+		}
+		exit (0);
 	}
 }
 
 void wait_child (int nb_child){
-    for (int i = 0; i < nb_child; i++)
-        wait (NULL);
+	for (int i = 0; i < nb_child; i++)
+		wait (NULL);
 }
 
 int main(int argc, char * argv[]){

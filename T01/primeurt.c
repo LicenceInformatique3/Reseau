@@ -1,3 +1,8 @@
+/**
+* FILENAME : primeurt.c
+* AUTHOR : Moragues Lucas, Perrot Gaëtan
+*
+*/
 #define _GNU_SOURCE
 
 #include <stdio.h>

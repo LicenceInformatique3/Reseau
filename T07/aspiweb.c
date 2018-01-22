@@ -6,14 +6,10 @@ int dialoguer_avec_serveur(int soc,char * chemin,FILE * f){
 	//sprintf(buf,"GET /%s HTTP/1.0\r\n\r\n",chemin);
 	printf("envoi a %d \"%s\"\n",soc,buf );
 	k=bor_write(soc,buf2);
-	if(k<=0){
-		return k;
-	}
+	if(k<=0) return k;
 	printf("attente réponse ...\n");
 	int k=bor_read_str(soc,buf,sizeof(buf));
-	if(k<=0){
-		return k;
-	}
+	if(k<=0) return k;
 	printf("reçu %d de %d \"%s\"\n",k,soc,buf );
 	return k;
 }
@@ -53,9 +49,7 @@ int main(int argc, char * argv[]){
 
 	while(1){
 		k=dialoguer_avec_serveur(soc,chemin,f);
-		if(k<=0){
-			 break;
-		}
+		if(k<=0) break;
 	}
 
 	fin1 :

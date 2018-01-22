@@ -1,5 +1,5 @@
 /**
-* FILENAME : defrag.c
+* FILENAME : serveur2-tcpip.c
 * AUTHOR : Moragues Lucas, Perrot Gaëtan
 *
 **/
@@ -18,12 +18,11 @@ typedef struct {
 
 #define SLOTS_NB 32
 
-typedef struct 
-{
+typedef struct{
 	Slot slots[SLOTS_NB];
-	int soc_ec
-	struct sockaddr_in adr;
-}Serveur;
+	int soc_ec;			 //Socket d'écoute
+	struct sockaddr_in adr; //Adresse du serveur
+} Serveur;
 
 void init_slot(Slot *o){
 	o->etat= E_LIBRE;
@@ -45,7 +44,7 @@ void init_serveur(Serveur * ser){
 	for (int i = 0; i < SLOTS_NB; ++i)
 		init_slot(&ser->slots[i]);
 	ser->soc_ec=-1;
-	memset(&ser->adr,0,sizeof (ser->adr));	//non obligatoire
+	memset(&ser->adr,0,sizeof (ser->adr));  //non obligatoire
 }
 
 int chercher_slot_libre(Serveur *ser){
@@ -54,11 +53,11 @@ int chercher_slot_libre(Serveur *ser){
 			return i;
 	return -1;
 }
+
 int demarrer_serveur(Serveur *ser,int port){
 	init_serveur(ser);
 	ser->soc_ec=bor_create_socket_in(SDCK_STREAM,port,&ser->adr);
-	if(ser->soc_ec<0)
-		return -1;
+	if(ser->soc_ec<0) return -1;
 	if(bor_listen(ser->soc_ec,8)<0){
 		close(ser->soc_ec);
 		return -1;
@@ -83,7 +82,6 @@ int accepter_connexion(Serveur *ser){
 		printf("Serveur : connexion refusée avec %s : plus de Slot libre\n",bor_adrtoa_in(&adr_client) );
 		return 0;
 	}
-
 	printf("Serveur %d connexion établie avec %s\n",soc_se,bor_adrtoa_in(&adr_client) );
 	Slot *o = &ser->slots[i];
 	o->soc=soc_se;
@@ -103,6 +101,7 @@ int proceder_lecture_requete(Slot *o){
 
 int proceder_ecriture_reponse(Slot *o){
 	char buf[1024];
+	sprintf(buf, "HTTP/1.1 500 Erreur du \r\n\r\n <html><body><h1>Serveur en construction !! </h1></body></html>\r\n");
 	int k=bor_write_str(o->soc,buf);
 	if(k<0) return k;
 	o->etat=E_LIRE_REQUETE;
@@ -118,7 +117,7 @@ void traiter_slot_si_eligible(Slot *o, fd_set *set_read, fd_set *set_write){
 			if(FD_ISSET(o->soc,set_read))
 				k=proceder_lecture_requete(o);
 			break;
-
+			
 		case E_ECRIRE_REPONSE:
 			if(FD_ISSET(o->soc,set_write))
 				k=proceder_ecriture_reponse(o);
@@ -187,8 +186,8 @@ int boucle_princ =1;
 
 void capter_SIGINT(int sig){
 	boucle_princ=0;
+	printf("Signal %d capté : Arret serveur\n", sig);
 }
-
 
 int main(int argc , char * argv[]){
 	if(argc-1 != 1){
@@ -203,7 +202,7 @@ int main(int argc , char * argv[]){
 		goto fin1;
 
 	while(boucle_princ){
-		k=faire_scrutation(&ser);			//inti_select_selon_etat	select	test éligibilité	soc_ec->accepter_connexion	Slot 
+		k=faire_scrutation(&ser);		   //inti_select_selon_etat	select  test éligibilité	soc_ec->accepter_connexion  Slot 
 		if( k <= 0 ) break;
 	}
 

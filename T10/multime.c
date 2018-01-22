@@ -86,33 +86,40 @@ void *bor_timer_data(){
 #include "bor-timer.h"
 
 int main(){
+
 	int boucle_princ=1;
 	int h1=bor_timer_add(2000,NULL);
 	int h2=bor_timer_add(5000,NULL);
 	int h3=bor_timer_add(10000,NULL);
 	int h4=bor_timer_add(20000,NULL);
+
 	while(boucle_princ){
 		fd_set set;
 		FD_ZERO(&set);
 		int res=select(0,&set,NULL,NULL,bor_timer_delay());
+		
 		if(res<0){
 			if(errno==EINTR)
 				continue;
 			perror("select");
 			break;
 		}
+
 		if(res==0){
 			int handle=bor_timer_handle();
 			if(handle==h1){
 				printf("timer 1\n");
 				h1=bor_timer_add(2000,NULL);
-			}else if(handle==h2){
+			}
+			else if(handle==h2){
 				printf("timer 2\n");
 				h2=bor_timer_add(5000,NULL);
-			}else if(handle==h3){
+			}
+			else if(handle==h3){
 				printf("timer 3\n");
 				h3=bor_timer_add(10000,NULL);
-			}else if(handle==h4){
+			}
+			else if(handle==h4){
 				printf("timer 4\n");
 				h4=bor_timer_add(20000,NULL);
 				boucle_princ=0;

@@ -1,152 +1,155 @@
+/**
+* FILENAME : mEtMme-ser.c
+* AUTHOR : Moragues Lucas, Perrot Gaëtan
+*
+**/
+
 #include "bor-util.h"
 
-typedef struct {
+typedef struct{
 	char *fnofam_nom,
-	* tub_ec_nom,
-	tub_cs_nom[100],
-	tub_sc_nom[100];
-	int tub_ec,tub_sc,tub_cs;
+		*tub_ec_nom,
+		tub_cs_nom[100],
+		tub_sc_nom[100];
+	int tub_ec, tub_cs, tub_sc;
 }Serveur;
 
+int boucle_princ = 1;
 
-int boucle_princ=1;
 void capter_fin(int sig){
-	boucle_princ=0;
+	boucle_princ = 0;
 }
 
+void capter_fin_fils(int sig){
+	printf("Signal %d capté\n", sig);
+	wait(-1,NULL,WNOHANG);
+}
 
+int creer_tube_ecoute(Serveur *s){
 
-
-int creer_tubes_ecoute(Serveur *s){
-	printf("Création tubes ecoute\n");
+	printf("Creation tube ecoute\n");
 	sprintf(s->tub_ec_nom,"tub_ec_%d",(int)getpid());
-	int k=mkfifo(s->tub_ec_nom, 0600);
-	if (k<0){
-		perror("mkfifo cs");
+	int k = mkfifo(s->tub_ec_nom, 0600);
+	if(k < 0){
+		perror("mkfifo ec");
 		return -1;
 	}
-	return 0
+	return 0;
 }
-
 
 void supprimer_tubes_ecoute(Serveur *s){
-	printf("Suppresion tubes ecoute\n");
+	printf("Suppression des tubes d'ecoute\n");
 	unlink(s->tub_ec_nom);
+ //   close(s->tub_ec);
 }
 
-int ouvrir_tubes_ecoute(Serveur *s){
-	//ouvertures bloquantes !!
-	printf("ouvertures tub_ec ecoute\n");
-	s->tub_ec=open(s->tub_ec_nom,O_RDONLY);
-	if (s->tub_ec<0){
+int ouverture_tubes_service(Serveur *s){
+	//Ouverture bloquante !
+	printf("Ouverture tub_sc...\n");
+	s->tub_sc = open(s->tub_sc_nom, 0_WRONLY);
+	if(s->tub_sc < 0){
+		perror("open tub_sc");
+		return -1;
+	}
+
+	printf("Ouverture tub_cs...\n");  
+	s->tub_cs = open(s->tub_cs_nom, 0_RDONLY);
+	if(s->tub_cs < 0){
 		perror("open tub_cs");
 		return -1;
 	}
+
 	return 0;
 }
 
-void fermer_tubes_ecoute(Serveur *s){
-	printf("Fermetures tub_ec ecoute\n");
-	close(c->tub_ec);
+void fermer_tubes_service(Serveur *s){
+	printf("Fermeture tubes services\n");
+	close(s->tub_cs);
+	close(s->tub_sc);
+}
+
+void attendre_contact(Serveur *s){
+	ouverture_tube_ecoute(*s);
+	fscanf(s->tub_ec, "%s %s", s->tub_cs_nom, s->tub_sc_nom);
+} 
+
+char* recherche_nom(Serveur *s, char *nom){
+
+	FILE *fichierText = fopen(s->fnofam_nom, "r");
+	char resultat[100];
+	int nom_trouve = 0;
+	if (fichierText == NULL){
+		fprintf(stderr,"Impossible d'ouvrir le fichier %s\n",nomFichier);
+	}
+
+	if(nom_trouve == 0) sprintf(resultat,"Non Trouvé");
+
+	return resultat;
+}
+
+void faire_dialogue(Serveur *s){
+	//lecture tub_cs
+	char nom[1000], resultat[100];
+
+	printf("Lecture dans tub_cs\n");	
+	k = bor_read_str(s->tub_cs, nom, sizeof(nom));
+	if(k <= 0) return k;
+
+	resultat = recherche_nom(*s, nom);
+	
+	printf("Envoi de %s au client\n", resultat);
+	k = bor_write(c->tub_sc, resultat);
+	if(k <= 0) return k;
 
 }
 
-
-void main_fils();
-			/*filsmain
-				ouvrir tube service
-				while (boucle princ)
-					faire dialogue
-				fermer tube service*/
-
-int attendre_contact(Serveur *s){
-	int k=ouvrir_tubes_ecoute(s);
-	if (k<0){
-		return k;
-		//lecture dans tub-ec des  nom tube service + attribution
+void fils_main(Serveur *s){
+	ouvrir_tubes_service(*s);
+	while(boucle_princ){
+		faire_dialogue();
 	}
+	fermer_tubes_service(*s);
 }
 
 int faire_transaction(Serveur *s){
-	attendre_contact(s);
-	int f=fork();
-	if (f<0){
-		perror("fork")
-		return -1;
+	attendre_contact();
+	int fils = fork();
+	if(fils < 0){ perror("fork"); return -1; }
+	if(fils == 0){
+		printf("Fermeture tube ecoute\n");
+		close(s->tub_ec);
+		fils_main(s);
 	}
-	if (f==0){
-	fermer_tubes_ecoute(s);
-	main_fils(s);
-	}
-	while(read > 0){
-	}
-	fermer_tubes_ecoute(s);
-	return 0;
-}
-/*
-	faire_transaction
-		attendre_contact
 
-			faire_diaogue
-				lecture tub_cs
-				recherche nam
-				écriture tub-sc
-*/
+	char buf[10];
+	while(bor_read_str(s->tub_ec,buf,sizeof(buf)) > 0);
+	close(s->tub_ec);
 
-/*
-int prendre_contact(Client *c){
-	printf("Ouverture tub_ec \n");
-	if (open(c->tub_ec_nom,O_WRONLY) <0){
-		perror ("open tub_ec")
-		return -1;
-	}
-	printf("Envoi nomstubes\n");
-	char buf[1000];
-	sprintf(buf,"%s %s",c->tub_cs_nom,c->tub_sc_nom);
-	int k=bor_write_str(c->tub_ec,buf);
-	close(c->tub_ec);
-	return k<0? -1:0;
-}
-
-int faire_dialogue(Client *c){
-	int k;
-	char buf[1000];
-	printf("Entrez un nom de famille\n");
-	k=bor_read_str(0,buf,sizeof(buf));
-	if (k<=0){
-		return k;
-	}
-	printf("Envoi de %s au serveur\n",buf );
-	k=bor_write_str(c->tub_cs,buf);
-	if(k<0){
-		return k;
-	}
-	printf("Attente réponse serveur ...\n");
-	k=bor_read_str(c->tub_sc,buf,sizeof(buf));
-	printf("Réponse :%s\n",buf );
 	return 1;
+}
 
-}*/
+int main(int argc , char *argv[]){
 
-int main(int argc,char * argv[]){
 	Serveur s;
-	int r=-1;
-	if (argc-1 != 1){
-		fprintf(stderr, "Usage: %s tub_ec\n", argv[0] );
+
+	if(argc - 1 != 2){
+		fprintf(stderr, "Usage : %s tub_ecoute fichier_noms\n ", argv[0]);
 		exit(1);
 	}
-	
-	if(creer_tubes_ecoute(&s) < 0){
-		exit(1);
-	}
+
+	s.tub_ec_nom = argv[1];
+	s.fnofam_nom = argv[2]
+
+	if(creer_tube_ecoute(&s) < 0) exit(1);
+
+	bor_signal(SIGPIPE,SIG_IGN,SA_RESTART);
 	bor_signal(SIGINT,capter_fin,0);
-	bor_signal(SIGPIPE,SIG_IGN,SA_RESTART);	
-	bor_signal(SIGCHLD,SIG_IGN,SA_RESTART);	
-
+	bor_signal(SIGCHLD,capter_fin_fils,SA_RESTART);
+	
 	while(boucle_princ){
-
+		r = faire_transaction(&s);
+		if(r <= 0) break;
 	}
-
 	supprimer_tubes_ecoute(&s);
-	exit 0;
+	exit(0);
 }

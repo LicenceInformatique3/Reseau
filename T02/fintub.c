@@ -1,9 +1,11 @@
+/**
+* FILENAME : fintub.c
+* AUTHOR : Moragues Lucas, Perrot Gaëtan
+*
+**/
 //gcc -Wall -std=c99 fintub.c bor-util.c -o fintub
 #define _GNU_SOURCE
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <ctype.h>
 #include "bor-util.h"
 /*

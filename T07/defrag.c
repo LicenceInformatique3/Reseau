@@ -1,3 +1,10 @@
+/**
+* FILENAME : defrag.c
+* AUTHOR : Moragues Lucas, Perrot Gaëtan
+*
+**/
+
+#define _GNU_SOURCE
 #include "bor-util.h"
 
 int couper_ligne(char * buf,int debut,int fin){
@@ -44,9 +51,7 @@ int main(int argc, char * argv[]){
 	int k = -1;
 	struct sockaddr_in adr_serveur;
 	int soc=bor_create_socket_in(SOCK_STREAM,0,&adr_serveur);
-	if(soc <0){
-		exit(1);
-	}
+	if(soc <0) exit(1);
 	if(bor_resolve_address_in(nom_serveur,port_serveur,&adr_serveur) <0){
 		goto fin1;
 	}
@@ -60,10 +65,8 @@ int main(int argc, char * argv[]){
 	int pos=0;
 	while (1){
 		k=bor_read_str(soc,buf+pos,sizeof(buf)-pos);
-		if(k<=0){
-			break;
-		}
-		printf("client : a lu ..");
+		if(k<=0) break;
+		printf("Client: a lu %s \n", buf);
 		defragmenter_ligne(buf,sizeof(buf),&pos,pos +k); //pos +=k
 	}
 
